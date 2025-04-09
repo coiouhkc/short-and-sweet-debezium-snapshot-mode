@@ -1,0 +1,25 @@
+{
+  "name": "initial_only",
+  "config": {
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "database.serverTimezone": "Europe/Berlin",
+    "database.hostname": "mysql",
+    "database.port": "3306",
+    "database.user": "root",
+    "database.password": "root",
+    "database.server.id": "3",
+    "topic.prefix": "initial_only",
+    "tombstones.on.delete": "false",
+    "database.include.list": "demo",
+    "table.include.list": "demo.test",
+    "snapshot.mode": "initial_only",
+    "include.schema.changes": "false",
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
+    "schema.history.internal.kafka.topic": "initial_only_schemahistory",
+    "schema.history.internal.store.only.captured.tables.ddl": true,
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false"
+  }
+}

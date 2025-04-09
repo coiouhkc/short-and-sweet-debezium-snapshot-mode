@@ -1,0 +1,96 @@
+services:
+  mysql:
+    image: mysql:8.0.35
+    container_name: mysql-db
+    environment:
+      MYSQL_DATABASE: demo
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 5s
+      retries: 60
+  zookeeper:
+    image: quay.io/debezium/zookeeper:2.7
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+    healthcheck:
+      test: bin/zkCli.sh version || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  kafka:
+    image: quay.io/debezium/kafka:2.7
+    ports:
+      - "9092:9092"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+    healthcheck:
+      test: bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    restart: "no"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: [ 'CMD', 'curl', 'localhost:9000' ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+  debezium:
+    image: quay.io/debezium/connect:3.1
+    ports:
+      - "8083:8083"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+    healthcheck:
+      test: [ 'CMD', 'curl', 'localhost:8083' ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+  
+  debezium-configurer:
+    image: curlimages/curl:latest
+    container_name: debezium-configurer
+    depends_on:
+      debezium:
+        condition: service_healthy
+    volumes:
+      - ./debezium:/debezium
+    command: >
+      /bin/sh -c 'curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/always.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/configuration_based.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/initial_only.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/initial.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/never.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/no_data.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/recovery.json" &&
+      curl -X POST "http://debezium:8083/connectors" -H "Content-Type: application/json" --data "@/debezium/when_needed.json"'

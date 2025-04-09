@@ -1,0 +1,32 @@
+{
+  "name": "configuration_based",
+  "config": {
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "database.serverTimezone": "Europe/Berlin",
+    "database.hostname": "mysql",
+    "database.port": "3306",
+    "database.user": "root",
+    "database.password": "root",
+    "database.server.id": "2",
+    "topic.prefix": "configuration_based",
+    "tombstones.on.delete": "false",
+    "database.include.list": "demo",
+    "table.include.list": "demo.test",
+    "snapshot.mode": "configuration_based",
+    "include.schema.changes": "false",
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
+    "schema.history.internal.kafka.topic": "configuration_based_schemahistory",
+    "schema.history.internal.store.only.captured.tables.ddl": true,
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "snapshot.mode.configuration.based.snapshot.data": "false",
+    "snapshot.mode.configuration.based.snapshot.on.data.error": "false",
+    "snapshot.mode.configuration.based.snapshot.on.schema.error": "false",
+    "snapshot.mode.configuration.based.snapshot.schema": "false",
+    "snapshot.mode.configuration.based.start.stream": "false",
+    "notification.enabled.channels": "sink",
+    "notification.sink.topic.name": "configuration_based_notification_sink"
+  }
+}
